@@ -1,0 +1,24 @@
+[package]
+name = "pixel-art-rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+image = "0.25"
+clap = { version = "4.5", features = ["derive"] }
+indicatif = "0.17"
+anyhow = "1.0"
+thiserror = "1.0"
+rayon = "1.10"
+palette = "0.7"
+kmeans_colors = "0.7"
+lazy_static = "1.4"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+opt-level = 3
+panic = "abort"
+
+[profile.release.package."*"]
+opt-level = 3

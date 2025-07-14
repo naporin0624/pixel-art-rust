@@ -1,0 +1,196 @@
+realtime_visualizer_fix:
+  problem_analysis:
+    issues:
+      - name: Unconnected progress callback
+        description: main.rs does not set the visualizer callback on the converter
+        location: src/main.rs:46-47
+        impact: No progress updates are shown during processing
+      
+      - name: Non-realtime parallel updates
+        description: Progress callbacks are invoked after all parallel processing completes
+        location: src/core/pixel_art.rs:94-117
+        impact: Progress bars only update at the end, not during processing
+      
+      - name: Missing thread communication
+        description: No mechanism for progress updates from within parallel threads
+        impact: Cannot show real-time progress in parallel mode
+
+  implementation_tasks:
+    task_1_thread_safe_callback:
+      name: Make progress callback thread-safe
+      priority: high
+      test_first:
+        - test_callback_from_multiple_threads
+        - test_atomic_counter_accuracy
+        - test_callback_performance_overhead
+      changes:
+        - file: src/core/pixel_art.rs
+          modifications:
+            - Change progress_callback type to Arc<dyn Fn(u32, u32) + Send + Sync>
+            - Update set_progress_callback to accept Arc
+            - Clone Arc for each thread in parallel processing
+
+    task_2_realtime_parallel_updates:
+      name: Implement real-time updates in parallel processing
+      priority: high
+      test_first:
+        - test_parallel_progress_updates
+        - test_progress_ordering
+        - test_update_frequency
+      changes:
+        - file: src/core/pixel_art.rs
+          modifications:
+            process_with_grid_parallel: |
+              use std::sync::atomic::{AtomicU32, Ordering};
+              
+              let progress_counter = Arc::new(AtomicU32::new(0));
+              let total_cells = grid.cell_count();
+              
+              let processed_cells: Vec<(u32, u32, Rgba<u8>)> = cells
+                  .par_iter()
+                  .map(|(row, col)| {
+                      let color = self.process_grid_cell(image, *row, *col, grid);
+                      
+                      // Real-time progress update
+                      if let Some(callback) = &self.progress_callback {
+                          callback(*row, *col);
+                      }
+                      
+                      let completed = progress_counter.fetch_add(1, Ordering::Relaxed) + 1;
+                      if completed % 10 == 0 {
+                          // Throttle updates to avoid overwhelming the UI
+                          std::thread::yield_now();
+                      }
+                      
+                      (*row, *col, color)
+                  })
+                  .collect();
+
+    task_3_connect_callback_in_main:
+      name: Connect visualizer callback in main.rs
+      priority: high
+      test_first:
+        - test_visualizer_callback_integration
+        - test_arc_cloning_safety
+      changes:
+        - file: src/main.rs
+          modifications:
+            before_convert: |
+              // Clone visualizer Arc for the callback
+              let vis_callback = Arc::clone(&visualizer);
+              converter.set_progress_callback(Arc::new(move |row, col| {
+                  vis_callback.update_cell(row, col);
+              }));
+
+    task_4_visual_improvements:
+      name: Enhance visual feedback
+      priority: medium
+      test_first:
+        - test_steady_tick_performance
+        - test_grid_display_format
+        - test_eta_calculation_accuracy
+      changes:
+        - file: src/cli/visualizer.rs
+          additions:
+            new_method_additions: |
+              // Enable steady tick for smoother updates
+              self.main_bar.enable_steady_tick(std::time::Duration::from_millis(100));
+              
+              // Start MultiProgress renderer in background thread
+              let mp_clone = Arc::clone(&self.multi_progress);
+              std::thread::spawn(move || {
+                  mp_clone.join().unwrap();
+              });
+            
+            grid_display_method: |
+              pub fn display_grid_progress(&self) -> String {
+                  let mut grid = String::new();
+                  for row in 0..self.rows {
+                      for col in 0..self.cols {
+                          let cell_done = self.is_cell_complete(row, col);
+                          grid.push_str(if cell_done { "█" } else { "░" });
+                      }
+                      grid.push('\n');
+                  }
+                  grid
+              }
+
+    task_5_quadtree_progress:
+      name: Add progress tracking for quadtree mode
+      priority: medium
+      test_first:
+        - test_quadtree_node_counting
+        - test_adaptive_progress_calculation
+      changes:
+        - file: src/core/quadtree.rs
+          additions:
+            progress_tracking: |
+              pub fn node_count(&self) -> u32 {
+                  self.count_nodes_recursive(&self.root)
+              }
+              
+              fn count_nodes_recursive(&self, node: &QuadNode) -> u32 {
+                  let mut count = 1;
+                  if let Some(children) = &node.children {
+                      for child in children.iter() {
+                          count += self.count_nodes_recursive(child);
+                      }
+                  }
+                  count
+              }
+        
+        - file: src/core/pixel_art.rs
+          modifications:
+            quadtree_progress: |
+              // Add progress callback support for quadtree processing
+              let node_count = tree.node_count();
+              let processed = Arc::new(AtomicU32::new(0));
+              
+              // Process nodes with progress updates
+              tree.traverse_with_callback(|node| {
+                  // Process node...
+                  let current = processed.fetch_add(1, Ordering::Relaxed);
+                  if let Some(callback) = &self.progress_callback {
+                      // Map node progress to grid coordinates for visualization
+                      let progress_percent = (current * 100) / node_count;
+                      callback(progress_percent / self.rows, progress_percent % self.cols);
+                  }
+              });
+
+  testing_strategy:
+    unit_tests:
+      - Thread safety of callbacks
+      - Progress update accuracy
+      - Performance overhead measurement
+      - Atomic counter correctness
+    
+    integration_tests:
+      - End-to-end progress visualization
+      - Parallel vs sequential progress consistency
+      - Quadtree mode progress tracking
+      - Memory leak detection with Arc usage
+    
+    performance_tests:
+      - Callback overhead impact
+      - UI update frequency optimization
+      - Large image processing benchmarks
+
+  implementation_order:
+    1. Make callbacks thread-safe (task_1)
+    2. Connect callback in main (task_3)
+    3. Implement real-time parallel updates (task_2)
+    4. Add visual improvements (task_4)
+    5. Implement quadtree progress (task_5)
+
+  expected_outcomes:
+    - Real-time progress updates during processing
+    - Smooth visual feedback with progress bars
+    - Minimal performance overhead (<5%)
+    - Works correctly in both parallel and sequential modes
+    - Adaptive progress for quadtree mode
+
+  rollback_plan:
+    - Keep original non-callback code paths
+    - Add feature flag for real-time updates
+    - Benchmark before/after performance
+    - Document any performance trade-offs

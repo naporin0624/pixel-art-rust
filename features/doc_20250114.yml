@@ -1,0 +1,419 @@
+documentation_plan:
+  overview:
+    project: pixel-art-rust
+    purpose: Create comprehensive VitePress documentation site and README
+    target_audience:
+      - Developers wanting to use the CLI tool
+      - Contributors interested in the algorithms
+      - Users seeking pixel art conversion solutions
+
+  directory_structure:
+    root_files:
+      - name: README.md
+        purpose: Main project documentation
+      - name: package.json
+        purpose: Node.js dependencies for VitePress
+      - name: .gitignore
+        updates:
+          - node_modules/
+          - docs/.vitepress/dist/
+          - docs/.vitepress/cache/
+    
+    docs_directory:
+      - path: docs/.vitepress/
+        files:
+          - config.ts
+          - theme/
+      - path: docs/
+        files:
+          - index.md
+      - path: docs/guide/
+        files:
+          - getting-started.md
+          - installation.md
+          - usage.md
+          - examples.md
+      - path: docs/api/
+        files:
+          - cli.md
+          - core.md
+          - algorithms.md
+      - path: docs/algorithms/
+        files:
+          - overview.md
+          - average-color.md
+          - median-cut.md
+          - kmeans.md
+          - quadtree.md
+      - path: docs/public/images/
+        purpose: Sample images and demos
+
+  readme_structure:
+    sections:
+      - name: Header
+        content: |
+          # 🎨 Pixel Art Rust
+          
+          <p align="center">
+            <img src="examples/banner.png" alt="Pixel Art Rust Banner" width="800">
+          </p>
+          
+          <p align="center">
+            <a href="https://github.com/naporin0624/pixel-art-rust/actions">
+              <img src="https://github.com/naporin0624/pixel-art-rust/actions/workflows/ci.yml/badge.svg" alt="CI Status">
+            </a>
+            <a href="https://crates.io/crates/pixel-art-rust">
+              <img src="https://img.shields.io/crates/v/pixel-art-rust.svg" alt="Crates.io">
+            </a>
+            <a href="https://docs.rs/pixel-art-rust">
+              <img src="https://docs.rs/pixel-art-rust/badge.svg" alt="Documentation">
+            </a>
+          </p>
+      
+      - name: Overview
+        content: |
+          ## Overview
+          
+          Pixel Art Rust is a high-performance command-line tool that converts regular images into pixel art using advanced color quantization algorithms. Built with Rust for speed and reliability, it offers multiple algorithms and real-time progress visualization.
+      
+      - name: Features
+        content: |
+          ## ✨ Features
+          
+          - 🚀 **Blazing Fast** - Parallel processing with Rayon
+          - 🎯 **Multiple Algorithms** - Average, Median Cut, K-Means, and Adaptive Quadtree
+          - 📊 **Real-time Progress** - Beautiful progress bars with indicatif
+          - 🔧 **Flexible** - Customizable grid sizes and color palettes
+          - 🎨 **High Quality** - Perceptually uniform LAB color space support
+          - 💾 **Memory Efficient** - Optimized for large images
+      
+      - name: Demo
+        content: |
+          ## 🖼️ Demo
+          
+          <table>
+            <tr>
+              <td align="center"><b>Original</b></td>
+              <td align="center"><b>Grid (32x32)</b></td>
+              <td align="center"><b>Adaptive Quadtree</b></td>
+            </tr>
+            <tr>
+              <td><img src="examples/sample.jpg" width="250"></td>
+              <td><img src="examples/output_grid.png" width="250"></td>
+              <td><img src="examples/output_adaptive.png" width="250"></td>
+            </tr>
+          </table>
+      
+      - name: Installation
+        content: |
+          ## 📦 Installation
+          
+          ### Prerequisites
+          - Rust 1.70+ (for SIMD support)
+          - cargo
+          
+          ### From Source
+          ```bash
+          git clone https://github.com/naporin0624/pixel-art-rust.git
+          cd pixel-art-rust
+          cargo build --release
+          ```
+          
+          ### From Crates.io
+          ```bash
+          cargo install pixel-art-rust
+          ```
+      
+      - name: Usage
+        content: |
+          ## 🚀 Usage
+          
+          ### Basic Usage
+          ```bash
+          pixel-art-rust -w 32 -h 32 -i input.jpg -o output.png
+          ```
+          
+          ### Advanced Options
+          ```bash
+          # K-Means with 16 colors
+          pixel-art-rust -w 64 -h 64 -i photo.jpg -o pixel.png --algorithm kmeans --colors 16
+          
+          # Adaptive quadtree mode
+          pixel-art-rust --adaptive -i photo.jpg -o adaptive.png --max-depth 8 --variance-threshold 30.0
+          
+          # Median cut algorithm
+          pixel-art-rust -w 128 -h 96 -i landscape.png -o retro.png --algorithm median-cut
+          ```
+          
+          ### All Options
+          ```
+          -w, --width <WIDTH>              Number of horizontal divisions
+          -h, --height <HEIGHT>            Number of vertical divisions
+          -i, --input <PATH>               Input image path
+          -o, --output <PATH>              Output image path
+          -a, --algorithm <ALGORITHM>      Color extraction algorithm [default: average]
+                                          [possible values: average, median-cut, kmeans]
+          -c, --colors <COLORS>            Number of colors for quantization
+              --adaptive                   Use adaptive quadtree instead of uniform grid
+              --max-depth <DEPTH>          Max depth for quadtree [default: 10]
+              --variance-threshold <VAL>   Variance threshold for splitting [default: 50.0]
+          ```
+      
+      - name: Algorithms
+        content: |
+          ## 🧮 Algorithms
+          
+          | Algorithm | Speed | Quality | Best For |
+          |-----------|-------|---------|----------|
+          | Average | ⚡⚡⚡ | ⭐⭐ | Quick previews |
+          | Median Cut | ⚡⚡ | ⭐⭐⭐ | Balanced results |
+          | K-Means | ⚡ | ⭐⭐⭐⭐ | High quality |
+          | Quadtree | ⚡⚡ | ⭐⭐⭐⭐ | Adaptive detail |
+          
+          See the [documentation](https://naporin0624.github.io/pixel-art-rust) for detailed explanations.
+      
+      - name: Performance
+        content: |
+          ## ⚡ Performance
+          
+          Benchmarks on AMD Ryzen 9 5900X (12 cores):
+          
+          | Image Size | Grid | Algorithm | Time |
+          |------------|------|-----------|------|
+          | 1024x1024 | 32x32 | Average | 0.08s |
+          | 1024x1024 | 32x32 | K-Means | 0.15s |
+          | 4096x4096 | 64x64 | Average | 0.35s |
+          | 4096x4096 | Adaptive | Quadtree | 0.42s |
+      
+      - name: Contributing
+        content: |
+          ## 🤝 Contributing
+          
+          Contributions are welcome! Please feel free to submit a Pull Request.
+          
+          1. Fork the repository
+          2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+          3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+          4. Push to the branch (`git push origin feature/amazing-feature`)
+          5. Open a Pull Request
+      
+      - name: License
+        content: |
+          ## 📄 License
+          
+          This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+  vitepress_config:
+    package_json: |
+      {
+        "name": "pixel-art-rust-docs",
+        "version": "1.0.0",
+        "description": "Documentation for Pixel Art Rust",
+        "scripts": {
+          "docs:dev": "vitepress dev docs",
+          "docs:build": "vitepress build docs",
+          "docs:preview": "vitepress preview docs"
+        },
+        "devDependencies": {
+          "vitepress": "^1.0.0"
+        }
+      }
+    
+    config_ts: |
+      import { defineConfig } from 'vitepress'
+      
+      export default defineConfig({
+        title: 'Pixel Art Rust',
+        description: 'Convert images to pixel art with advanced color quantization',
+        base: '/pixel-art-rust/',
+        
+        themeConfig: {
+          logo: '/logo.svg',
+          
+          nav: [
+            { text: 'Home', link: '/' },
+            { text: 'Guide', link: '/guide/getting-started' },
+            { text: 'API', link: '/api/cli' },
+            { text: 'Algorithms', link: '/algorithms/overview' }
+          ],
+          
+          sidebar: {
+            '/guide/': [
+              {
+                text: 'Guide',
+                items: [
+                  { text: 'Getting Started', link: '/guide/getting-started' },
+                  { text: 'Installation', link: '/guide/installation' },
+                  { text: 'Usage', link: '/guide/usage' },
+                  { text: 'Examples', link: '/guide/examples' }
+                ]
+              }
+            ],
+            '/api/': [
+              {
+                text: 'API Reference',
+                items: [
+                  { text: 'CLI', link: '/api/cli' },
+                  { text: 'Core Library', link: '/api/core' },
+                  { text: 'Algorithms', link: '/api/algorithms' }
+                ]
+              }
+            ],
+            '/algorithms/': [
+              {
+                text: 'Algorithms',
+                items: [
+                  { text: 'Overview', link: '/algorithms/overview' },
+                  { text: 'Average Color', link: '/algorithms/average-color' },
+                  { text: 'Median Cut', link: '/algorithms/median-cut' },
+                  { text: 'K-Means', link: '/algorithms/kmeans' },
+                  { text: 'Quadtree', link: '/algorithms/quadtree' }
+                ]
+              }
+            ]
+          },
+          
+          socialLinks: [
+            { icon: 'github', link: 'https://github.com/naporin0624/pixel-art-rust' }
+          ],
+          
+          footer: {
+            message: 'Released under the MIT License.',
+            copyright: 'Copyright © 2024-present'
+          },
+          
+          search: {
+            provider: 'local'
+          }
+        }
+      })
+
+  documentation_content:
+    index_md: |
+      ---
+      layout: home
+      
+      hero:
+        name: Pixel Art Rust
+        text: Transform images into stunning pixel art
+        tagline: High-performance image quantization with multiple algorithms
+        image:
+          src: /hero-image.png
+          alt: Pixel Art Examples
+        actions:
+          - theme: brand
+            text: Get Started
+            link: /guide/getting-started
+          - theme: alt
+            text: View on GitHub
+            link: https://github.com/naporin0624/pixel-art-rust
+      
+      features:
+        - icon: 🚀
+          title: Blazing Fast
+          details: Leverages Rust's performance with parallel processing and SIMD optimizations
+        - icon: 🎨
+          title: Multiple Algorithms
+          details: Choose from Average, Median Cut, K-Means, or Adaptive Quadtree
+        - icon: 📊
+          title: Real-time Progress
+          details: Beautiful progress visualization with detailed metrics
+        - icon: 🔧
+          title: Flexible Configuration
+          details: Customize grid size, color count, and processing strategy
+      ---
+    
+    getting_started_md: |
+      # Getting Started
+      
+      Welcome to Pixel Art Rust! This guide will help you get up and running quickly.
+      
+      ## Prerequisites
+      
+      - Rust 1.70 or higher
+      - Cargo (comes with Rust)
+      - A terminal/command prompt
+      
+      ## Quick Start
+      
+      1. Install the tool:
+      ```bash
+      cargo install pixel-art-rust
+      ```
+      
+      2. Convert your first image:
+      ```bash
+      pixel-art-rust -w 32 -h 32 -i photo.jpg -o pixel_art.png
+      ```
+      
+      That's it! You've created your first pixel art.
+      
+      ## Next Steps
+      
+      - Learn about [different algorithms](/algorithms/overview)
+      - Explore [advanced usage](/guide/usage)
+      - See more [examples](/guide/examples)
+    
+    algorithms_overview_md: |
+      # Color Quantization Algorithms
+      
+      Pixel Art Rust implements several color quantization algorithms, each with its own strengths.
+      
+      ## Comparison
+      
+      | Algorithm | Speed | Quality | Memory | Use Case |
+      |-----------|-------|---------|--------|----------|
+      | Average | Fastest | Good | Low | Quick previews, uniform images |
+      | Median Cut | Fast | Better | Medium | Balanced quality/speed |
+      | K-Means | Slow | Best | High | Maximum quality |
+      | Quadtree | Fast | Adaptive | Medium | Images with varying detail |
+      
+      ## Algorithm Details
+      
+      ### Average Color
+      Simple and fast - calculates the arithmetic mean of all pixels in each cell.
+      
+      ### Median Cut
+      Recursively divides the color space to create a balanced palette.
+      
+      ### K-Means Clustering
+      Iteratively refines color clusters for optimal representation.
+      
+      ### Adaptive Quadtree
+      Dynamically subdivides regions based on color variance.
+
+  implementation_steps:
+    1. Create package.json and install VitePress
+    2. Create README.md with all sections
+    3. Set up VitePress configuration
+    4. Create documentation structure
+    5. Write guide pages
+    6. Write API documentation
+    7. Write algorithm explanations
+    8. Copy sample images to public directory
+    9. Set up GitHub Actions for deployment (optional)
+    10. Test locally with npm run docs:dev
+
+  github_actions_deployment:
+    workflow_file: .github/workflows/deploy-docs.yml
+    content: |
+      name: Deploy Docs
+      
+      on:
+        push:
+          branches: [main]
+      
+      jobs:
+        deploy:
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
+              with:
+                node-version: 18
+            - run: npm ci
+            - run: npm run docs:build
+            - uses: peaceiris/actions-gh-pages@v3
+              with:
+                github_token: ${{ secrets.GITHUB_TOKEN }}
+                publish_dir: docs/.vitepress/dist

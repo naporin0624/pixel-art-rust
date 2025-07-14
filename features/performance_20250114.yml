@@ -1,0 +1,379 @@
+performance_optimization_plan:
+  analysis:
+    current_bottlenecks:
+      - name: Memory allocation overhead
+        location: src/core/pixel_art.rs:extract_cell_pixels
+        impact: Creates new Vec for every cell (O(cells * pixels_per_cell))
+        
+      - name: Inefficient pixel access
+        location: src/core/pixel_art.rs:141-154
+        impact: Double nested loops with boundary checks
+        
+      - name: Expensive color space conversion
+        location: src/core/color.rs:color_distance_lab
+        impact: Floating point operations for every pixel comparison
+        
+      - name: No SIMD utilization
+        impact: Missing 4-16x potential speedup for color averaging
+        
+      - name: Progress callback overhead
+        location: src/core/pixel_art.rs:104-106
+        impact: Function call overhead in hot loop
+
+  optimization_phases:
+    phase_1_memory_optimization:
+      priority: critical
+      expected_speedup: 2-3x
+      tasks:
+        - name: Implement thread-local pixel buffer pool
+          changes:
+            - file: src/core/pixel_art.rs
+              add_struct: |
+                thread_local! {
+                    static PIXEL_BUFFER: RefCell<Vec<Rgba<u8>>> = RefCell::new(Vec::with_capacity(65536));
+                }
+              
+              modify_extract_cell_pixels: |
+                fn extract_cell_pixels_fast(
+                    &self,
+                    image: &RgbaImage,
+                    bounds: (u32, u32, u32, u32),
+                    buffer: &mut Vec<Rgba<u8>>
+                ) {
+                    let (x, y, w, h) = bounds;
+                    buffer.clear();
+                    buffer.reserve((w * h) as usize);
+                    
+                    // Use raw pointer access to avoid bounds checks
+                    let img_width = image.width();
+                    let pixels = image.as_raw();
+                    
+                    for dy in 0..h {
+                        let row_start = ((y + dy) * img_width + x) as usize * 4;
+                        for dx in 0..w {
+                            let idx = row_start + (dx as usize * 4);
+                            unsafe {
+                                let r = *pixels.get_unchecked(idx);
+                                let g = *pixels.get_unchecked(idx + 1);
+                                let b = *pixels.get_unchecked(idx + 2);
+                                let a = *pixels.get_unchecked(idx + 3);
+                                buffer.push(Rgba([r, g, b, a]));
+                            }
+                        }
+                    }
+                }
+
+        - name: Pre-allocate result image buffer
+          changes:
+            - file: src/core/pixel_art.rs
+              optimization: |
+                // Instead of put_pixel in loop, use direct slice manipulation
+                let mut result_data = vec![0u8; (width * height * 4) as usize];
+                // ... process ...
+                RgbaImage::from_raw(width, height, result_data).unwrap()
+
+    phase_2_simd_optimization:
+      priority: high
+      expected_speedup: 4-8x for color operations
+      dependencies:
+        - Add to Cargo.toml: |
+            [dependencies]
+            packed_simd_2 = "0.3"
+            
+            [build]
+            rustflags = ["-C", "target-cpu=native"]
+      
+      tasks:
+        - name: SIMD color averaging
+          changes:
+            - file: src/core/color.rs
+              add_simd_average: |
+                #[cfg(target_arch = "x86_64")]
+                use std::arch::x86_64::*;
+                
+                pub struct SimdAverageColorExtractor;
+                
+                impl ColorExtractor for SimdAverageColorExtractor {
+                    fn extract_color(&self, pixels: &[Rgba<u8>]) -> Rgba<u8> {
+                        if pixels.is_empty() {
+                            return Rgba([0, 0, 0, 255]);
+                        }
+                        
+                        // Process 8 pixels at a time using AVX2
+                        let mut sum_r = unsafe { _mm256_setzero_si256() };
+                        let mut sum_g = unsafe { _mm256_setzero_si256() };
+                        let mut sum_b = unsafe { _mm256_setzero_si256() };
+                        
+                        let chunks = pixels.chunks_exact(8);
+                        let remainder = chunks.remainder();
+                        
+                        for chunk in chunks {
+                            unsafe {
+                                // Load 8 RGBA pixels
+                                let mut r_vals = [0u16; 16];
+                                let mut g_vals = [0u16; 16];
+                                let mut b_vals = [0u16; 16];
+                                
+                                for (i, pixel) in chunk.iter().enumerate() {
+                                    r_vals[i] = pixel.0[0] as u16;
+                                    g_vals[i] = pixel.0[1] as u16;
+                                    b_vals[i] = pixel.0[2] as u16;
+                                }
+                                
+                                let r = _mm256_loadu_si256(r_vals.as_ptr() as *const __m256i);
+                                let g = _mm256_loadu_si256(g_vals.as_ptr() as *const __m256i);
+                                let b = _mm256_loadu_si256(b_vals.as_ptr() as *const __m256i);
+                                
+                                sum_r = _mm256_add_epi16(sum_r, r);
+                                sum_g = _mm256_add_epi16(sum_g, g);
+                                sum_b = _mm256_add_epi16(sum_b, b);
+                            }
+                        }
+                        
+                        // Horizontal sum and handle remainder
+                        let mut total_r = horizontal_sum_avx2(sum_r) as u32;
+                        let mut total_g = horizontal_sum_avx2(sum_g) as u32;
+                        let mut total_b = horizontal_sum_avx2(sum_b) as u32;
+                        
+                        for pixel in remainder {
+                            total_r += pixel.0[0] as u32;
+                            total_g += pixel.0[1] as u32;
+                            total_b += pixel.0[2] as u32;
+                        }
+                        
+                        let count = pixels.len() as u32;
+                        Rgba([
+                            (total_r / count) as u8,
+                            (total_g / count) as u8,
+                            (total_b / count) as u8,
+                            255,
+                        ])
+                    }
+                }
+
+        - name: LAB conversion LUT
+          changes:
+            - file: src/core/color.rs
+              add_lut: |
+                lazy_static! {
+                    static ref GAMMA_LUT: [f32; 256] = {
+                        let mut lut = [0.0; 256];
+                        for i in 0..256 {
+                            let v = i as f32 / 255.0;
+                            lut[i] = if v > 0.04045 {
+                                ((v + 0.055) / 1.055).powf(2.4)
+                            } else {
+                                v / 12.92
+                            };
+                        }
+                        lut
+                    };
+                    
+                    static ref LAB_F_LUT: [f32; 4096] = {
+                        let mut lut = [0.0; 4096];
+                        for i in 0..4096 {
+                            let t = i as f32 / 4095.0 * 2.0; // scale to [0, 2]
+                            lut[i] = if t > 0.008856 {
+                                t.powf(1.0 / 3.0)
+                            } else {
+                                7.787 * t + 16.0 / 116.0
+                            };
+                        }
+                        lut
+                    };
+                }
+                
+                pub fn color_distance_lab_fast(color1: &Rgba<u8>, color2: &Rgba<u8>) -> f64 {
+                    // Use LUTs for gamma correction
+                    let r1 = GAMMA_LUT[color1.0[0] as usize];
+                    let g1 = GAMMA_LUT[color1.0[1] as usize];
+                    let b1 = GAMMA_LUT[color1.0[2] as usize];
+                    
+                    let r2 = GAMMA_LUT[color2.0[0] as usize];
+                    let g2 = GAMMA_LUT[color2.0[1] as usize];
+                    let b2 = GAMMA_LUT[color2.0[2] as usize];
+                    
+                    // Matrix multiplication for XYZ (fused constants)
+                    let x1 = 0.4124564 * r1 + 0.3575761 * g1 + 0.1804375 * b1;
+                    let y1 = 0.2126729 * r1 + 0.7151522 * g1 + 0.0721750 * b1;
+                    let z1 = 0.0193339 * r1 + 0.1191920 * g1 + 0.9503041 * b1;
+                    
+                    // ... similar for color2 ...
+                    
+                    // Use LUT for f(t) function
+                    let fx1 = LAB_F_LUT[((x1 / 0.95047).clamp(0.0, 2.0) * 2047.5) as usize];
+                    let fy1 = LAB_F_LUT[((y1).clamp(0.0, 2.0) * 2047.5) as usize];
+                    let fz1 = LAB_F_LUT[((z1 / 1.08883).clamp(0.0, 2.0) * 2047.5) as usize];
+                    
+                    // ... compute L*a*b* and distance ...
+                }
+
+    phase_3_cache_optimization:
+      priority: medium
+      expected_speedup: 1.5-2x
+      tasks:
+        - name: Structure of Arrays pattern
+          changes:
+            - file: src/core/pixel_art.rs
+              add_soa_processing: |
+                struct PixelDataSoA {
+                    r: Vec<u8>,
+                    g: Vec<u8>,
+                    b: Vec<u8>,
+                    a: Vec<u8>,
+                }
+                
+                impl PixelDataSoA {
+                    fn from_rgba_slice(pixels: &[Rgba<u8>]) -> Self {
+                        let len = pixels.len();
+                        let mut r = Vec::with_capacity(len);
+                        let mut g = Vec::with_capacity(len);
+                        let mut b = Vec::with_capacity(len);
+                        let mut a = Vec::with_capacity(len);
+                        
+                        for pixel in pixels {
+                            r.push(pixel.0[0]);
+                            g.push(pixel.0[1]);
+                            b.push(pixel.0[2]);
+                            a.push(pixel.0[3]);
+                        }
+                        
+                        Self { r, g, b, a }
+                    }
+                }
+
+        - name: Loop tiling for cache efficiency
+          changes:
+            - file: src/core/pixel_art.rs
+              optimize_loops: |
+                // Process in tiles that fit in L2 cache
+                const TILE_SIZE: u32 = 64;
+                
+                for tile_y in (0..height).step_by(TILE_SIZE as usize) {
+                    for tile_x in (0..width).step_by(TILE_SIZE as usize) {
+                        // Process tile
+                        let tile_h = (tile_y + TILE_SIZE).min(height) - tile_y;
+                        let tile_w = (tile_x + TILE_SIZE).min(width) - tile_x;
+                        
+                        // All pixels in tile are now cache-hot
+                        process_tile(tile_x, tile_y, tile_w, tile_h);
+                    }
+                }
+
+    phase_4_algorithm_optimization:
+      priority: medium
+      expected_speedup: 2-3x for quantization
+      tasks:
+        - name: Fast color quantization with bit manipulation
+          changes:
+            - file: src/core/quantization.rs
+              add_fast_quantization: |
+                // Reduce 24-bit RGB to 15-bit for fast hashing
+                #[inline(always)]
+                fn quantize_color_15bit(color: Rgba<u8>) -> u16 {
+                    let r = (color.0[0] >> 3) as u16;
+                    let g = (color.0[1] >> 3) as u16;
+                    let b = (color.0[2] >> 3) as u16;
+                    (r << 10) | (g << 5) | b
+                }
+                
+                pub struct FastMedianCut {
+                    color_histogram: [u32; 32768], // 2^15 entries
+                }
+                
+                impl FastMedianCut {
+                    pub fn build_histogram(&mut self, pixels: &[Rgba<u8>]) {
+                        // Clear histogram using SIMD
+                        unsafe {
+                            std::ptr::write_bytes(self.color_histogram.as_mut_ptr(), 0, 32768);
+                        }
+                        
+                        for pixel in pixels {
+                            let quantized = quantize_color_15bit(*pixel);
+                            self.color_histogram[quantized as usize] += 1;
+                        }
+                    }
+                }
+
+        - name: Early termination for uniform regions
+          changes:
+            - file: src/core/pixel_art.rs
+              add_uniformity_check: |
+                #[inline(always)]
+                fn is_uniform_region(pixels: &[Rgba<u8>], threshold: u8) -> Option<Rgba<u8>> {
+                    if pixels.is_empty() {
+                        return None;
+                    }
+                    
+                    let first = pixels[0];
+                    let mut all_same = true;
+                    
+                    // Vectorizable loop
+                    for pixel in pixels.iter().skip(1) {
+                        let dr = (first.0[0] as i16 - pixel.0[0] as i16).abs();
+                        let dg = (first.0[1] as i16 - pixel.0[1] as i16).abs();
+                        let db = (first.0[2] as i16 - pixel.0[2] as i16).abs();
+                        
+                        if dr > threshold as i16 || dg > threshold as i16 || db > threshold as i16 {
+                            all_same = false;
+                            break;
+                        }
+                    }
+                    
+                    if all_same {
+                        Some(first)
+                    } else {
+                        None
+                    }
+                }
+
+  build_configuration:
+    cargo_toml_additions: |
+      [profile.release]
+      lto = "fat"
+      codegen-units = 1
+      opt-level = 3
+      panic = "abort"
+      
+      [profile.release.package."*"]
+      opt-level = 3
+      
+    rustflags: |
+      RUSTFLAGS="-C target-cpu=native -C link-arg=-fuse-ld=lld"
+
+  benchmarking:
+    tools:
+      - criterion for micro-benchmarks
+      - flamegraph for profiling
+      - perf stat for cache analysis
+    
+    test_cases:
+      - small_image: 256x256
+      - medium_image: 1024x1024
+      - large_image: 4096x4096
+      - uniform_image: solid color
+      - complex_image: high detail photo
+
+  implementation_order:
+    1. Memory optimization (immediate 2-3x speedup)
+    2. Build configuration (free performance)
+    3. SIMD color averaging (critical path optimization)
+    4. LAB LUT implementation (removes floating point bottleneck)
+    5. Cache optimization (improves scaling)
+    6. Algorithm improvements (final polish)
+
+  risks_and_mitigations:
+    - risk: Unsafe code usage
+      mitigation: Extensive testing with Miri, debug assertions
+    
+    - risk: Platform-specific SIMD
+      mitigation: Feature detection and fallback paths
+    
+    - risk: Increased complexity
+      mitigation: Clear documentation, benchmarks to justify each optimization
+
+  expected_results:
+    - Overall speedup: 5-10x
+    - Memory usage: -50%
+    - Large image support: up to 16K resolution
+    - Real-time preview for smaller images
