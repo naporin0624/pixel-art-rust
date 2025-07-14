@@ -4,7 +4,7 @@ description: Create a GitHub release with compiled binaries
 
 # Release Command
 
-Create a new GitHub release for the mosaic-rust project with compiled binaries and comprehensive release notes.
+Create a new GitHub release for the pixel-art-rust project with compiled binaries and comprehensive release notes.
 
 ## Usage
 `/project:release <version> [release_notes]`
@@ -44,15 +44,15 @@ This command will:
      - Breaking changes (if any)
      - Installation instructions
    - Upload binary assets:
-     - `mosaic-rust` (Linux/macOS binary)
-     - `mosaic-rust.exe` (Windows binary)
+     - `pixel-art-rust` (Linux/macOS binary)
+     - `pixel-art-rust.exe` (Windows binary)
    - Mark as latest release
 
 5. **Generate release notes template**:
    ```markdown
-   ## 🎨 Mosaic Art Generator v{version}
+   ## 🎨 Pixel Art Generator v{version}
    
-   A high-performance Rust implementation for creating stunning mosaic art.
+   A high-performance Rust implementation for creating stunning pixel art.
    
    ### ✨ New Features
    - [Auto-generated from commit messages since last release]
@@ -66,13 +66,13 @@ This command will:
    ### 📦 Installation
    
    #### Download Binaries
-   - **Linux/macOS**: Download `mosaic-rust`
-   - **Windows**: Download `mosaic-rust.exe`
+   - **Linux/macOS**: Download `pixel-art-rust`
+   - **Windows**: Download `pixel-art-rust.exe`
    
    #### Build from Source
    ```bash
    git clone <repo-url>
-   cd mosaic-rust
+   cd pixel-art-rust
    cargo build --release
    ```
    
