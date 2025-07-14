@@ -4,18 +4,18 @@ performance_optimization_plan:
       - name: Memory allocation overhead
         location: src/core/pixel_art.rs:extract_cell_pixels
         impact: Creates new Vec for every cell (O(cells * pixels_per_cell))
-        
+
       - name: Inefficient pixel access
         location: src/core/pixel_art.rs:141-154
         impact: Double nested loops with boundary checks
-        
+
       - name: Expensive color space conversion
         location: src/core/color.rs:color_distance_lab
         impact: Floating point operations for every pixel comparison
-        
+
       - name: No SIMD utilization
         impact: Missing 4-16x potential speedup for color averaging
-        
+
       - name: Progress callback overhead
         location: src/core/pixel_art.rs:104-106
         impact: Function call overhead in hot loop
@@ -32,7 +32,7 @@ performance_optimization_plan:
                 thread_local! {
                     static PIXEL_BUFFER: RefCell<Vec<Rgba<u8>>> = RefCell::new(Vec::with_capacity(65536));
                 }
-              
+
               modify_extract_cell_pixels: |
                 fn extract_cell_pixels_fast(
                     &self,
@@ -79,10 +79,10 @@ performance_optimization_plan:
         - Add to Cargo.toml: |
             [dependencies]
             packed_simd_2 = "0.3"
-            
+
             [build]
             rustflags = ["-C", "target-cpu=native"]
-      
+
       tasks:
         - name: SIMD color averaging
           changes:
@@ -90,9 +90,9 @@ performance_optimization_plan:
               add_simd_average: |
                 #[cfg(target_arch = "x86_64")]
                 use std::arch::x86_64::*;
-                
+
                 pub struct SimdAverageColorExtractor;
-                
+
                 impl ColorExtractor for SimdAverageColorExtractor {
                     fn extract_color(&self, pixels: &[Rgba<u8>]) -> Rgba<u8> {
                         if pixels.is_empty() {
@@ -182,7 +182,7 @@ performance_optimization_plan:
                         lut
                     };
                 }
-                
+
                 pub fn color_distance_lab_fast(color1: &Rgba<u8>, color2: &Rgba<u8>) -> f64 {
                     // Use LUTs for gamma correction
                     let r1 = GAMMA_LUT[color1.0[0] as usize];
@@ -222,7 +222,7 @@ performance_optimization_plan:
                     b: Vec<u8>,
                     a: Vec<u8>,
                 }
-                
+
                 impl PixelDataSoA {
                     fn from_rgba_slice(pixels: &[Rgba<u8>]) -> Self {
                         let len = pixels.len();
@@ -248,7 +248,7 @@ performance_optimization_plan:
               optimize_loops: |
                 // Process in tiles that fit in L2 cache
                 const TILE_SIZE: u32 = 64;
-                
+
                 for tile_y in (0..height).step_by(TILE_SIZE as usize) {
                     for tile_x in (0..width).step_by(TILE_SIZE as usize) {
                         // Process tile
@@ -276,11 +276,11 @@ performance_optimization_plan:
                     let b = (color.0[2] >> 3) as u16;
                     (r << 10) | (g << 5) | b
                 }
-                
+
                 pub struct FastMedianCut {
                     color_histogram: [u32; 32768], // 2^15 entries
                 }
-                
+
                 impl FastMedianCut {
                     pub fn build_histogram(&mut self, pixels: &[Rgba<u8>]) {
                         // Clear histogram using SIMD
@@ -334,10 +334,10 @@ performance_optimization_plan:
       codegen-units = 1
       opt-level = 3
       panic = "abort"
-      
+
       [profile.release.package."*"]
       opt-level = 3
-      
+
     rustflags: |
       RUSTFLAGS="-C target-cpu=native -C link-arg=-fuse-ld=lld"
 
@@ -346,7 +346,7 @@ performance_optimization_plan:
       - criterion for micro-benchmarks
       - flamegraph for profiling
       - perf stat for cache analysis
-    
+
     test_cases:
       - small_image: 256x256
       - medium_image: 1024x1024
@@ -354,8 +354,7 @@ performance_optimization_plan:
       - uniform_image: solid color
       - complex_image: high detail photo
 
-  implementation_order:
-    1. Memory optimization (immediate 2-3x speedup)
+  implementation_order: 1. Memory optimization (immediate 2-3x speedup)
     2. Build configuration (free performance)
     3. SIMD color averaging (critical path optimization)
     4. LAB LUT implementation (removes floating point bottleneck)
@@ -365,10 +364,10 @@ performance_optimization_plan:
   risks_and_mitigations:
     - risk: Unsafe code usage
       mitigation: Extensive testing with Miri, debug assertions
-    
+
     - risk: Platform-specific SIMD
       mitigation: Feature detection and fallback paths
-    
+
     - risk: Increased complexity
       mitigation: Clear documentation, benchmarks to justify each optimization
 

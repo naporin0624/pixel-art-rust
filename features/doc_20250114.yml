@@ -18,7 +18,7 @@ documentation_plan:
           - node_modules/
           - docs/.vitepress/dist/
           - docs/.vitepress/cache/
-    
+
     docs_directory:
       - path: docs/.vitepress/
         files:
@@ -53,11 +53,11 @@ documentation_plan:
       - name: Header
         content: |
           # 🎨 Pixel Art Rust
-          
+
           <p align="center">
             <img src="examples/banner.png" alt="Pixel Art Rust Banner" width="800">
           </p>
-          
+
           <p align="center">
             <a href="https://github.com/naporin0624/pixel-art-rust/actions">
               <img src="https://github.com/naporin0624/pixel-art-rust/actions/workflows/ci.yml/badge.svg" alt="CI Status">
@@ -69,28 +69,28 @@ documentation_plan:
               <img src="https://docs.rs/pixel-art-rust/badge.svg" alt="Documentation">
             </a>
           </p>
-      
+
       - name: Overview
         content: |
           ## Overview
-          
+
           Pixel Art Rust is a high-performance command-line tool that converts regular images into pixel art using advanced color quantization algorithms. Built with Rust for speed and reliability, it offers multiple algorithms and real-time progress visualization.
-      
+
       - name: Features
         content: |
           ## ✨ Features
-          
+
           - 🚀 **Blazing Fast** - Parallel processing with Rayon
           - 🎯 **Multiple Algorithms** - Average, Median Cut, K-Means, and Adaptive Quadtree
           - 📊 **Real-time Progress** - Beautiful progress bars with indicatif
           - 🔧 **Flexible** - Customizable grid sizes and color palettes
           - 🎨 **High Quality** - Perceptually uniform LAB color space support
           - 💾 **Memory Efficient** - Optimized for large images
-      
+
       - name: Demo
         content: |
           ## 🖼️ Demo
-          
+
           <table>
             <tr>
               <td align="center"><b>Original</b></td>
@@ -103,48 +103,48 @@ documentation_plan:
               <td><img src="examples/output_adaptive.png" width="250"></td>
             </tr>
           </table>
-      
+
       - name: Installation
         content: |
           ## 📦 Installation
-          
+
           ### Prerequisites
           - Rust 1.70+ (for SIMD support)
           - cargo
-          
+
           ### From Source
           ```bash
           git clone https://github.com/naporin0624/pixel-art-rust.git
           cd pixel-art-rust
           cargo build --release
           ```
-          
+
           ### From Crates.io
           ```bash
           cargo install pixel-art-rust
           ```
-      
+
       - name: Usage
         content: |
           ## 🚀 Usage
-          
+
           ### Basic Usage
           ```bash
           pixel-art-rust -w 32 -h 32 -i input.jpg -o output.png
           ```
-          
+
           ### Advanced Options
           ```bash
           # K-Means with 16 colors
           pixel-art-rust -w 64 -h 64 -i photo.jpg -o pixel.png --algorithm kmeans --colors 16
-          
+
           # Adaptive quadtree mode
           pixel-art-rust --adaptive -i photo.jpg -o adaptive.png --max-depth 8 --variance-threshold 30.0
-          
+
           # Median cut algorithm
           pixel-art-rust -w 128 -h 96 -i landscape.png -o retro.png --algorithm median-cut
           ```
-          
+
           ### All Options
           ```
           -w, --width <WIDTH>              Number of horizontal divisions
@@ -158,49 +158,49 @@ documentation_plan:
               --max-depth <DEPTH>          Max depth for quadtree [default: 10]
               --variance-threshold <VAL>   Variance threshold for splitting [default: 50.0]
           ```
-      
+
       - name: Algorithms
         content: |
           ## 🧮 Algorithms
-          
+
           | Algorithm | Speed | Quality | Best For |
           |-----------|-------|---------|----------|
           | Average | ⚡⚡⚡ | ⭐⭐ | Quick previews |
           | Median Cut | ⚡⚡ | ⭐⭐⭐ | Balanced results |
           | K-Means | ⚡ | ⭐⭐⭐⭐ | High quality |
           | Quadtree | ⚡⚡ | ⭐⭐⭐⭐ | Adaptive detail |
-          
+
           See the [documentation](https://naporin0624.github.io/pixel-art-rust) for detailed explanations.
-      
+
       - name: Performance
         content: |
           ## ⚡ Performance
-          
+
           Benchmarks on AMD Ryzen 9 5900X (12 cores):
-          
+
           | Image Size | Grid | Algorithm | Time |
           |------------|------|-----------|------|
           | 1024x1024 | 32x32 | Average | 0.08s |
           | 1024x1024 | 32x32 | K-Means | 0.15s |
           | 4096x4096 | 64x64 | Average | 0.35s |
           | 4096x4096 | Adaptive | Quadtree | 0.42s |
-      
+
       - name: Contributing
         content: |
           ## 🤝 Contributing
-          
+
           Contributions are welcome! Please feel free to submit a Pull Request.
-          
+
           1. Fork the repository
           2. Create your feature branch (`git checkout -b feature/amazing-feature`)
           3. Commit your changes (`git commit -m 'Add some amazing feature'`)
           4. Push to the branch (`git push origin feature/amazing-feature`)
           5. Open a Pull Request
-      
+
       - name: License
         content: |
           ## 📄 License
-          
+
           This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
   vitepress_config:
@@ -218,10 +218,10 @@ documentation_plan:
           "vitepress": "^1.0.0"
         }
       }
-    
+
     config_ts: |
       import { defineConfig } from 'vitepress'
-      
+
       export default defineConfig({
         title: 'Pixel Art Rust',
         description: 'Convert images to pixel art with advanced color quantization',
@@ -292,7 +292,7 @@ documentation_plan:
     index_md: |
       ---
       layout: home
-      
+
       hero:
         name: Pixel Art Rust
         text: Transform images into stunning pixel art
@@ -307,7 +307,7 @@ documentation_plan:
           - theme: alt
             text: View on GitHub
             link: https://github.com/naporin0624/pixel-art-rust
-      
+
       features:
         - icon: 🚀
           title: Blazing Fast
@@ -322,68 +322,67 @@ documentation_plan:
           title: Flexible Configuration
           details: Customize grid size, color count, and processing strategy
       ---
-    
+
     getting_started_md: |
       # Getting Started
-      
+
       Welcome to Pixel Art Rust! This guide will help you get up and running quickly.
-      
+
       ## Prerequisites
-      
+
       - Rust 1.70 or higher
       - Cargo (comes with Rust)
       - A terminal/command prompt
-      
+
       ## Quick Start
-      
+
       1. Install the tool:
       ```bash
       cargo install pixel-art-rust
       ```
-      
+
       2. Convert your first image:
       ```bash
       pixel-art-rust -w 32 -h 32 -i photo.jpg -o pixel_art.png
       ```
-      
+
       That's it! You've created your first pixel art.
-      
+
       ## Next Steps
-      
+
       - Learn about [different algorithms](/algorithms/overview)
       - Explore [advanced usage](/guide/usage)
       - See more [examples](/guide/examples)
-    
+
     algorithms_overview_md: |
       # Color Quantization Algorithms
-      
+
       Pixel Art Rust implements several color quantization algorithms, each with its own strengths.
-      
+
       ## Comparison
-      
+
       | Algorithm | Speed | Quality | Memory | Use Case |
       |-----------|-------|---------|--------|----------|
       | Average | Fastest | Good | Low | Quick previews, uniform images |
       | Median Cut | Fast | Better | Medium | Balanced quality/speed |
       | K-Means | Slow | Best | High | Maximum quality |
       | Quadtree | Fast | Adaptive | Medium | Images with varying detail |
-      
+
       ## Algorithm Details
-      
+
       ### Average Color
       Simple and fast - calculates the arithmetic mean of all pixels in each cell.
-      
+
       ### Median Cut
       Recursively divides the color space to create a balanced palette.
-      
+
       ### K-Means Clustering
       Iteratively refines color clusters for optimal representation.
-      
+
       ### Adaptive Quadtree
       Dynamically subdivides regions based on color variance.
 
-  implementation_steps:
-    1. Create package.json and install VitePress
+  implementation_steps: 1. Create package.json and install VitePress
     2. Create README.md with all sections
     3. Set up VitePress configuration
     4. Create documentation structure
@@ -398,11 +397,11 @@ documentation_plan:
     workflow_file: .github/workflows/deploy-docs.yml
     content: |
       name: Deploy Docs
-      
+
       on:
         push:
           branches: [main]
-      
+
       jobs:
         deploy:
           runs-on: ubuntu-latest

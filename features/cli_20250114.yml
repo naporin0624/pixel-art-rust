@@ -70,7 +70,7 @@ pixel_art_rust_implementation_plan:
                 cell_width: u32,
                 cell_height: u32,
             }
-            
+
             impl Grid {
                 pub fn new(image_width: u32, image_height: u32, grid_width: u32, grid_height: u32) -> Self
                 pub fn get_cell_bounds(&self, row: u32, col: u32) -> (u32, u32, u32, u32)
@@ -90,29 +90,29 @@ pixel_art_rust_implementation_plan:
         implementation:
           color.rs: |
             use palette::{Lab, Srgb, FromColor};
-            
+
             pub trait ColorExtractor {
                 fn extract_color(&self, pixels: &[Rgba<u8>]) -> Rgba<u8>;
             }
-            
+
             pub struct AverageColorExtractor;
             pub struct MedianCutExtractor { max_colors: u32 }
             pub struct KMeansExtractor { k: u32, max_iterations: u32 }
-          
+
           quantization.rs: |
             pub struct MedianCutQuantizer {
                 buckets: Vec<ColorBucket>,
             }
-            
+
             impl MedianCutQuantizer {
                 pub fn quantize(pixels: &[Rgba<u8>], target_colors: u32) -> Vec<Rgba<u8>>
                 fn find_largest_axis(bucket: &ColorBucket) -> Axis
                 fn split_bucket(bucket: ColorBucket, axis: Axis) -> (ColorBucket, ColorBucket)
             }
-            
+
           quadtree.rs: |
             use image::{Rgba, RgbaImage};
-            
+
             #[derive(Debug)]
             pub struct QuadNode {
                 x: u32,
@@ -123,13 +123,13 @@ pixel_art_rust_implementation_plan:
                 palette_idx: Option<u8>,
                 children: Option<Box<[QuadNode; 4]>>,
             }
-            
+
             pub struct QuadTree {
                 root: QuadNode,
                 max_depth: u32,
                 variance_threshold: f64,
             }
-            
+
             impl QuadTree {
                 pub fn build(image: &RgbaImage, max_depth: u32, variance_threshold: f64) -> Self
                 pub fn quantize_with_palette(&mut self, palette_size: u32)
@@ -152,18 +152,18 @@ pixel_art_rust_implementation_plan:
         implementation:
           pixel_art.rs: |
             use rayon::prelude::*;
-            
+
             pub enum ProcessingStrategy {
                 UniformGrid(Grid),
                 AdaptiveQuadTree(QuadTree),
             }
-            
+
             pub struct PixelArtConverter {
                 strategy: ProcessingStrategy,
                 color_extractor: Box<dyn ColorExtractor>,
                 progress_callback: Option<Box<dyn Fn(u32, u32)>>,
             }
-            
+
             impl PixelArtConverter {
                 pub fn with_grid(grid: Grid, extractor: Box<dyn ColorExtractor>) -> Self
                 pub fn with_quadtree(max_depth: u32, variance_threshold: f64, extractor: Box<dyn ColorExtractor>) -> Self
@@ -192,7 +192,7 @@ pixel_art_rust_implementation_plan:
           args.rs: |
             use clap::{Parser, ValueEnum};
             use std::path::PathBuf;
-            
+
             #[derive(Parser, Debug)]
             #[command(name = "pixel-art-rust")]
             #[command(about = "Convert images to pixel art", long_about = None)]
@@ -224,7 +224,7 @@ pixel_art_rust_implementation_plan:
                 #[arg(long, default_value = "50.0", help = "Variance threshold for quadtree splitting")]
                 pub variance_threshold: f64,
             }
-            
+
             #[derive(ValueEnum, Clone, Debug)]
             pub enum ColorAlgorithm {
                 Average,
@@ -243,7 +243,7 @@ pixel_art_rust_implementation_plan:
           visualizer.rs: |
             use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
             use std::sync::Arc;
-            
+
             pub struct GridVisualizer {
                 multi_progress: Arc<MultiProgress>,
                 main_bar: ProgressBar,
@@ -251,7 +251,7 @@ pixel_art_rust_implementation_plan:
                 rows: u32,
                 cols: u32,
             }
-            
+
             impl GridVisualizer {
                 pub fn new(rows: u32, cols: u32) -> Self
                 pub fn update_cell(&self, row: u32, col: u32)
@@ -282,7 +282,7 @@ pixel_art_rust_implementation_plan:
           main.rs: |
             use clap::Parser;
             use anyhow::{Context, Result};
-            
+
             fn main() -> Result<()> {
                 let args = Args::parse();
                 args.validate().context("Invalid arguments")?;
@@ -335,7 +335,7 @@ pixel_art_rust_implementation_plan:
         implementation:
           error.rs: |
             use thiserror::Error;
-            
+
             #[derive(Error, Debug)]
             pub enum PixelArtError {
                 #[error("Invalid grid dimensions: {0}x{1}")]
@@ -357,23 +357,21 @@ pixel_art_rust_implementation_plan:
   algorithms_detail:
     median_cut:
       description: Recursively divides color space into buckets
-      steps:
-        1. Create initial bucket with all pixels
+      steps: 1. Create initial bucket with all pixels
         2. Find bucket with largest color range
         3. Sort pixels along longest axis
         4. Split at median
         5. Repeat until target color count reached
       complexity: O(n log n) where n is pixel count
-    
+
     kmeans:
       description: Iterative clustering in color space
-      steps:
-        1. Initialize k cluster centers randomly
+      steps: 1. Initialize k cluster centers randomly
         2. Assign each pixel to nearest center
         3. Update centers as mean of assigned pixels
         4. Repeat until convergence
       complexity: O(n * k * i) where i is iterations
-    
+
     quadtree_divide_conquer:
       description: Adaptive spatial subdivision for efficient color processing
       advantages:
@@ -382,18 +380,17 @@ pixel_art_rust_implementation_plan:
         - Focuses detail where needed (edges, textures)
         - Natural hierarchical LOD structure
         - Reduces quantization input from N pixels to L leaves (L << N)
-      steps:
-        1. Start with entire image as root node
+      steps: 1. Start with entire image as root node
         2. Calculate color variance for region
         3. If variance > threshold AND depth < max_depth, split into 4 quadrants
         4. Recursively process each quadrant
         5. Store mean color and variance at each node
         6. Apply color quantization only to leaf nodes
-      complexity: 
+      complexity:
         - Tree construction: O(N) amortized
         - Quantization: O(L log L) where L = number of leaves
         - Memory: O(boundary_length × log(image_size))
-    
+
     color_distance:
       lab_space: |
         // More perceptually uniform than RGB
@@ -411,10 +408,10 @@ pixel_art_rust_implementation_plan:
     - Downsample large images before processing
     - Use SIMD for color averaging (optional)
     - QuadTree-specific optimizations:
-      - Integral images for O(1) region statistics
-      - Iterative tree building to avoid stack overflow
-      - Memory pool for node allocation
-      - Z-order traversal for better cache locality
+        - Integral images for O(1) region statistics
+        - Iterative tree building to avoid stack overflow
+        - Memory pool for node allocation
+        - Z-order traversal for better cache locality
 
   cli_interface:
     command: pixel-art-rust
@@ -432,7 +429,7 @@ pixel_art_rust_implementation_plan:
         // Clear screen and draw grid
         print!("\x1B[2J\x1B[H");
         println!("Processing {} x {} grid", rows, cols);
-        
+
         // Draw grid cells as small progress bars
         for r in 0..rows {
             for c in 0..cols {
@@ -447,7 +444,7 @@ pixel_art_rust_implementation_plan:
             }
             println!();
         }
-    
+
     performance_metrics:
       - Total pixels processed per second
       - Current cell processing time

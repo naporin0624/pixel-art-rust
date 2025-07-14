@@ -1,0 +1,60 @@
+# Crawlable Links Report
+# Site: http://localhost:5173/pixel-art-rust
+# Generated on: 2025-07-15
+
+site_structure:
+  home:
+    - url: /pixel-art-rust/
+      title: "Home Page"
+
+  guide:
+    - url: /pixel-art-rust/guide/getting-started.html
+      title: "Getting Started"
+    - url: /pixel-art-rust/guide/installation.html
+      title: "Installation"
+    - url: /pixel-art-rust/guide/usage.html
+      title: "Usage"
+    - url: /pixel-art-rust/guide/examples.html
+      title: "Examples"
+
+  api:
+    - url: /pixel-art-rust/api/cli.html
+      title: "CLI Reference"
+    - url: /pixel-art-rust/api/core.html
+      title: "Core Library"
+    - url: /pixel-art-rust/api/algorithms.html
+      title: "Algorithms API"
+
+  algorithms:
+    - url: /pixel-art-rust/algorithms/overview.html
+      title: "Algorithms Overview"
+    - url: /pixel-art-rust/algorithms/average-color.html
+      title: "Average Color"
+    - url: /pixel-art-rust/algorithms/median-cut.html
+      title: "Median Cut"
+    - url: /pixel-art-rust/algorithms/kmeans.html
+      title: "K-Means"
+    - url: /pixel-art-rust/algorithms/quadtree.html
+      title: "Quadtree"
+
+summary:
+  total_pages: 13
+  sections:
+    - name: "Home"
+      count: 1
+    - name: "Guide"
+      count: 4
+    - name: "API"
+      count: 3
+    - name: "Algorithms"
+      count: 5
+
+navigation_structure:
+  main_navigation:
+    - Home: /pixel-art-rust/
+    - Guide: /pixel-art-rust/guide/getting-started.html
+    - API: /pixel-art-rust/api/cli.html
+    - Algorithms: /pixel-art-rust/algorithms/overview.html
+
+  external_links:
+    - GitHub: https://github.com/naporin0624/pixel-art-rust
