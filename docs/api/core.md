@@ -24,17 +24,17 @@ use image::open;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load input image
     let input_image = open("input.jpg")?;
-    
+
     // Create converter with fixed grid
     let config = GridConfig::Fixed { width: 32, height: 32 };
     let converter = PixelArtConverter::new(config, Algorithm::Average);
-    
+
     // Convert to pixel art
     let pixel_art = converter.convert(&input_image)?;
-    
+
     // Save result
     pixel_art.save("output.png")?;
-    
+
     Ok(())
 }
 ```
@@ -100,9 +100,9 @@ Configuration for pixel grid layout.
 ```rust
 pub enum GridConfig {
     Fixed { width: u32, height: u32 },
-    Adaptive { 
-        max_depth: u32, 
-        variance_threshold: f64 
+    Adaptive {
+        max_depth: u32,
+        variance_threshold: f64
     },
 }
 ```
@@ -110,11 +110,13 @@ pub enum GridConfig {
 #### Variants
 
 **`Fixed`**
+
 - Creates uniform pixel grid
 - `width`: Number of horizontal divisions
 - `height`: Number of vertical divisions
 
 **`Adaptive`**
+
 - Uses quadtree for variable pixel sizes
 - `max_depth`: Maximum subdivision depth (1-20)
 - `variance_threshold`: Color variance threshold for splitting (0.0-100.0)
@@ -134,16 +136,19 @@ pub enum Algorithm {
 #### Variants
 
 **`Average`**
+
 - Fast arithmetic mean calculation
 - No additional configuration required
 - Best for uniform images
 
 **`MedianCut`**
+
 - Recursive color space division
 - Requires `ColorConfig`
 - Balanced quality/performance
 
 **`KMeans`**
+
 - Iterative clustering algorithm
 - Requires `ColorConfig`
 - Highest quality results
@@ -159,6 +164,7 @@ pub struct ColorConfig {
 ```
 
 **Fields:**
+
 - `count`: Number of colors for quantization (2-256)
 
 ### ConversionError
@@ -205,27 +211,27 @@ fn process_directory<P: AsRef<Path>>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let input_path = input_dir.as_ref();
     let output_path = output_dir.as_ref();
-    
+
     std::fs::create_dir_all(output_path)?;
-    
+
     for entry in std::fs::read_dir(input_path)? {
         let entry = entry?;
         let path = entry.path();
-        
+
         if let Some(ext) = path.extension() {
             if matches!(ext.to_str(), Some("jpg") | Some("png") | Some("jpeg")) {
                 let input_image = image::open(&path)?;
                 let pixel_art = converter.convert(&input_image)?;
-                
+
                 let output_file = output_path.join(
                     path.file_stem().unwrap()
                 ).with_extension("png");
-                
+
                 pixel_art.save(output_file)?;
             }
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -241,14 +247,14 @@ fn process_large_image(path: &str) -> Result<(), Box<dyn std::error::Error>> {
         max_depth: 8,
         variance_threshold: 40.0,
     };
-    
+
     let converter = PixelArtConverter::new(config, Algorithm::Average);
-    
+
     // Load and process
     let image = image::open(path)?;
     let result = converter.convert(&image)?;
     result.save("output.png")?;
-    
+
     Ok(())
 }
 ```
@@ -261,24 +267,24 @@ use pixel_art_rust::{PixelArtConverter, Algorithm, GridConfig, ColorConfig};
 fn compare_algorithms(input: &image::DynamicImage) -> Result<(), Box<dyn std::error::Error>> {
     let grid = GridConfig::Fixed { width: 48, height: 48 };
     let colors = ColorConfig { count: 16 };
-    
+
     // Average algorithm
     let avg_converter = PixelArtConverter::new(grid, Algorithm::Average);
     let avg_result = avg_converter.convert(input)?;
     avg_result.save("output_average.png")?;
-    
+
     // Median Cut algorithm
     let median_converter = PixelArtConverter::new(grid, Algorithm::MedianCut)
         .with_colors(colors);
     let median_result = median_converter.convert(input)?;
     median_result.save("output_median.png")?;
-    
+
     // K-Means algorithm
     let kmeans_converter = PixelArtConverter::new(grid, Algorithm::KMeans)
         .with_colors(colors);
     let kmeans_result = kmeans_converter.convert(input)?;
     kmeans_result.save("output_kmeans.png")?;
-    
+
     Ok(())
 }
 ```
@@ -320,11 +326,11 @@ let converter = PixelArtConverter::new(config, algorithm);
 
 ### Algorithm Performance
 
-| Algorithm | Speed | Memory | Quality | Best For |
-|-----------|-------|--------|---------|----------|
-| Average | ⚡⚡⚡ | 💾 | ⭐⭐ | Large batches, previews |
-| MedianCut | ⚡⚡ | 💾💾 | ⭐⭐⭐ | Balanced processing |
-| KMeans | ⚡ | 💾💾💾 | ⭐⭐⭐⭐ | High-quality output |
+| Algorithm | Speed  | Memory | Quality  | Best For                |
+| --------- | ------ | ------ | -------- | ----------------------- |
+| Average   | ⚡⚡⚡ | 💾     | ⭐⭐     | Large batches, previews |
+| MedianCut | ⚡⚡   | 💾💾   | ⭐⭐⭐   | Balanced processing     |
+| KMeans    | ⚡     | 💾💾💾 | ⭐⭐⭐⭐ | High-quality output     |
 
 ## Error Handling
 
@@ -365,6 +371,7 @@ pixel_art_rust = { version = "0.1.0", features = ["parallel", "progress"] }
 ```
 
 Available features:
+
 - `parallel` (default): Enable parallel processing with Rayon
 - `progress` (default): Enable progress callback support
 - `simd`: Enable SIMD optimizations (requires nightly Rust)
@@ -387,18 +394,18 @@ pub fn convert_to_pixel_art(
 ) -> Vec<u8> {
     let image = image::RgbaImage::from_raw(width, height, image_data.to_vec())
         .expect("Invalid image data");
-    
+
     let converter = PixelArtConverter::new(
-        GridConfig::Fixed { 
-            width: grid_width, 
-            height: grid_height 
+        GridConfig::Fixed {
+            width: grid_width,
+            height: grid_height
         },
         Algorithm::Average
     );
-    
+
     let result = converter.convert(&image::DynamicImage::ImageRgba8(image))
         .expect("Conversion failed");
-    
+
     result.to_rgba8().into_raw()
 }
 ```
@@ -413,45 +420,45 @@ use pixel_art_rust::{PixelArtConverter, Algorithm, GridConfig, ColorConfig};
 struct Args {
     #[arg(short, long)]
     input: String,
-    
+
     #[arg(short, long)]
     output: String,
-    
+
     #[arg(short, long, default_value = "32")]
     width: u32,
-    
+
     #[arg(short = 'H', long, default_value = "32")]
     height: u32,
-    
+
     #[arg(short, long, default_value = "average")]
     algorithm: String,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    
+
     let algorithm = match args.algorithm.as_str() {
         "average" => Algorithm::Average,
         "median-cut" => Algorithm::MedianCut,
         "kmeans" => Algorithm::KMeans,
         _ => panic!("Invalid algorithm"),
     };
-    
+
     let config = GridConfig::Fixed {
         width: args.width,
         height: args.height,
     };
-    
+
     let mut converter = PixelArtConverter::new(config, algorithm);
-    
+
     if matches!(algorithm, Algorithm::MedianCut | Algorithm::KMeans) {
         converter = converter.with_colors(ColorConfig { count: 16 });
     }
-    
+
     let image = image::open(&args.input)?;
     let result = converter.convert(&image)?;
     result.save(&args.output)?;
-    
+
     Ok(())
 }
 ```

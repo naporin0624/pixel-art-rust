@@ -62,6 +62,7 @@ pixel-art-rust --version
 ```
 
 You should see output similar to:
+
 ```
 pixel-art-rust 0.1.0
 ```
@@ -69,11 +70,13 @@ pixel-art-rust 0.1.0
 ## Updating
 
 ### From Crates.io
+
 ```bash
 cargo install pixel-art-rust --force
 ```
 
 ### From Source
+
 ```bash
 git pull
 cargo build --release
@@ -84,11 +87,13 @@ cargo build --release
 ### Common Issues
 
 **"command not found"**: Make sure `~/.cargo/bin` is in your PATH:
+
 ```bash
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
 **Compilation errors**: Ensure you have Rust 1.70+:
+
 ```bash
 rustc --version
 rustup update

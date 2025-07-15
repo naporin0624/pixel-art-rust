@@ -11,11 +11,13 @@ Welcome to Pixel Art Rust! This guide will help you get up and running quickly.
 ## Quick Start
 
 1. Install the tool:
+
 ```bash
 cargo install pixel-art-rust
 ```
 
 2. Convert your first image:
+
 ```bash
 pixel-art-rust -w 32 -h 32 -i photo.jpg -o pixel_art.png
 ```
