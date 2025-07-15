@@ -34,13 +34,28 @@ Pixel Art Rust is a high-performance command-line tool that converts regular ima
 <table>
   <tr>
     <td align="center"><b>Original</b></td>
-    <td align="center"><b>Grid (32x32)</b></td>
+    <td align="center"><b>Average</b></td>
+    <td align="center"><b>Median Cut</b></td>
+    <td align="center"><b>K-Means</b></td>
+  </tr>
+  <tr>
+    <td><img src="examples/sample.jpg" width="200"></td>
+    <td><img src="examples/portrait_avg.png" width="200"></td>
+    <td><img src="examples/portrait_median.png" width="200"></td>
+    <td><img src="examples/portrait_kmeans.png" width="200"></td>
+  </tr>
+</table>
+
+### Processing Methods
+
+<table>
+  <tr>
+    <td align="center"><b>Uniform Grid (32x32)</b></td>
     <td align="center"><b>Adaptive Quadtree</b></td>
   </tr>
   <tr>
-    <td><img src="examples/sample.jpg" width="250"></td>
-    <td><img src="examples/output_grid.png" width="250"></td>
-    <td><img src="examples/output_adaptive.png" width="250"></td>
+    <td><img src="examples/output_grid.png" width="300"></td>
+    <td><img src="examples/output_adaptive.png" width="300"></td>
   </tr>
 </table>
 
