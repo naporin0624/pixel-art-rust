@@ -121,17 +121,6 @@ pixel-art-rust -w 128 -h 96 -i landscape.png -o retro.png --algorithm median-cut
 
 See the [documentation](https://naporin0624.github.io/pixel-art-rust) for detailed explanations.
 
-## ⚡ Performance
-
-Benchmarks on AMD Ryzen 9 5900X (12 cores):
-
-| Image Size | Grid | Algorithm | Time |
-|------------|------|-----------|------|
-| 1024x1024 | 32x32 | Average | 0.08s |
-| 1024x1024 | 32x32 | K-Means | 0.15s |
-| 4096x4096 | 64x64 | Average | 0.35s |
-| 4096x4096 | Adaptive | Quadtree | 0.42s |
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
